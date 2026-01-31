@@ -1,2 +1,1 @@
-# projectjerry
-Hackathon
+This is the code repository for the parts of the (Low level conceptual) Jerry I prototyped. High Level Jerry is (going to be) a smart, always-listening assistant that helps seniors stay safe, connected, and independent. It would feature a medication companion that reminds users when to take their pills, a quiet infrared motion detection system that detects when they might be alone, a storytelling type personality that engages them in conversations on its own accord (this part can be turned off though), an emergency bridge that alerts family members in case of emergencies, and a customizable companion that feels personal.
