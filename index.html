@@ -1,128 +1,618 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Project Jerry Prototype</title>
-<style>
-/* -------------------------------------------------
-   CSS VARIABLES (you can tweak these colours later)
-   ------------------------------------------------- */
-:root {
-  --primary-blue: #2a5a8a;
-  --accent-warm:  #4c82b8;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Jerry | Empathetic Companion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;1,600&display=swap" rel="stylesheet">
+    <style>
+        /* --- THEME VARIABLES --- */
+        :root {
+            /* Default Theme (Jerry Blue) */
+            --primary: #2a5a8a;
+            --accent: #f4a261;
+            --bg-color: #f8f9fa;
+            --text-main: #2d3436;
+            --text-sub: #636e72;
+            --glass: rgba(255, 255, 255, 0.65);
+            --blob-1: rgba(42, 90, 138, 0.8);
+            --blob-2: rgba(244, 162, 97, 0.8);
+            --blob-interactive: rgba(162, 155, 254, 0.8);
+        }
 
-/* -------------------------------------------------
-   THEME TOGGLE BUTTON – now rectangular
-   ------------------------------------------------- */
-.theme-toggle {
-  position: fixed;
-  top: 18px;
-  right: 18px;
+        /* Smooth Variable Transitions */
+        body, .status-blob, button, .text-display, h1 {
+            transition: all 0.5s ease;
+        }
 
-  /* Size – feel free to adjust */
-  width: 130px;
-  height: 50px;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
 
-  /* Gradient background (light mode) */
-  background: linear-gradient(135deg,
-              var(--primary-blue),
-              var(--accent-warm));
-  color: #fff;
-  border: none;
-  border-radius: 0;               /* <-- rectangular! */
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-  transition: background 0.3s ease, transform 0.2s ease;
-}
+        /* --- NAVIGATION / THEMES --- */
+        .theme-nav {
+            position: fixed;
+            top: 20px;
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 20px;
+            border-radius: 50px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            width: 90%;
+            max-width: 800px;
+        }
 
-/* Hover / focus effect */
-.theme-toggle:hover,
-.theme-toggle:focus-visible {
-  transform: translateY(-4px);
-}
+        .theme-btn {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: transform 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 0; /* Override default button padding */
+        }
 
-/* Icon that lives inside the button */
-.theme-toggle span {
-  width: 24px;
-  height: 24px;
-  background: #fff;
-  border-radius: 50%;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-  transition: transform 0.35s cubic-bezier(.4,.8,.3,1);
-}
+        .theme-btn:hover { transform: scale(1.2); }
 
-/* Dark‑mode specific button styling */
-body.dark .theme-toggle {
-  background: linear-gradient(135deg,
-              rgba(0,0,0,0.5),
-              rgba(0,0,0,0.4));
-}
+        /* --- BACKGROUND ANIMATION --- */
+        .gradient-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            overflow: hidden;
+            background: var(--bg-color); /* Matches theme */
+        }
 
-/* When dark mode is active, nudge the icon a bit to the right */
-body.dark .theme-toggle span {
-  transform: translateX(20px);
-}
+        svg { display: none; }
 
-/* -------------------------------------------------
-   OTHER ORIGINAL STYLES (unchanged)
-   ------------------------------------------------- */
-/* (Copy‑paste the rest of your original <style> block here) */
+        .gradients-container {
+            filter: url(#goo) blur(40px);
+            width: 100%;
+            height: 100%;
+        }
 
-/* Example: keep the rest of your layout */
-body {
-  margin: 0;
-  font-family: Arial, Helvetica, sans-serif;
-  background: #fafafa;
-  color: #333;
-}
+        .g-blob {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            mix-blend-mode: hard-light;
+            opacity: 0.7;
+            border-radius: 50%;
+            transition: background 1s ease; /* Smooth color shift */
+        }
 
-/* Buttons in the UI – keep as you like */
-button,
-input[type="button"],
-input[type="submit"] {
-  padding: 0.5rem 1rem;
-  margin: 0;
-  font-size: 1rem;
-  background: #f7f7f7;
-  border: none;
-  border-radius: 0.3rem;
-  cursor: pointer;
-}
+        .g-blob:nth-child(1) {
+            background: radial-gradient(circle, var(--blob-1) 0%, rgba(255,255,255,0) 60%);
+            top: calc(50% - 300px);
+            left: calc(50% - 300px);
+            animation: moveInCircle 20s reverse infinite;
+            transform-origin: calc(50% - 400px);
+        }
 
-/* ... (your original CSS for .controls, .hero, etc.) ... */
-</style>
+        .g-blob:nth-child(2) {
+            background: radial-gradient(circle, var(--blob-2) 0%, rgba(255,255,255,0) 60%);
+            width: 500px;
+            height: 500px;
+            top: calc(50% - 250px);
+            left: calc(50% - 250px);
+            animation: moveInCircle 40s linear infinite;
+            transform-origin: calc(50% + 400px);
+        }
+
+        .interactive {
+            position: absolute;
+            background: radial-gradient(circle at center, var(--blob-interactive) 0, rgba(255,255,255,0) 50%);
+            width: 100%;
+            height: 100%;
+            top: -50%;
+            left: -50%;
+            opacity: 0.6;
+            mix-blend-mode: hard-light;
+        }
+
+        @keyframes moveInCircle {
+            0% { transform: rotate(0deg); }
+            50% { transform: rotate(180deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- MAIN UI --- */
+        header {
+            text-align: center;
+            padding: 100px 20px 40px; /* More top padding for navbar */
+            max-width: 800px;
+            position: relative;
+            z-index: 2;
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin: 0 0 10px 0;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: var(--text-sub);
+            font-style: italic;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .demo-container {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 32px;
+            padding: 50px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.06);
+            width: 90%;
+            max-width: 650px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.4);
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* --- Jerry Visualizer --- */
+        .visualizer-box {
+            height: 140px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .status-blob {
+            width: 100px;
+            height: 100px;
+            background: var(--primary);
+            border-radius: 50%;
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 0 0 var(--primary); /* Uses color for shadow too */
+            position: relative;
+            z-index: 3;
+        }
+
+        .status-blob.listening {
+            background: var(--accent);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-blob.thinking {
+            background: var(--blob-interactive);
+            transform: scale(0.85);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            animation: rotate 2.5s infinite linear;
+        }
+
+        .status-blob.speaking {
+            background: #55efc4;
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(85, 239, 196, 0.4);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255,255,255, 0.7); }
+            70% { box-shadow: 0 0 0 25px rgba(255,255,255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255, 0); }
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg) scale(0.85); }
+            to { transform: rotate(360deg) scale(0.85); }
+        }
+
+        /* --- Transcripts --- */
+        .transcript-area {
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 16px;
+            text-align: left;
+            border: 1px solid rgba(255,255,255,0.4);
+        }
+
+        .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 700;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+        }
+
+        .text-display {
+            font-size: 1.15rem;
+            line-height: 1.6;
+            min-height: 1.6em;
+            color: var(--text-main);
+        }
+
+        #jerry-response {
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        /* --- Controls --- */
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .voice-settings {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--text-sub);
+        }
+
+        select {
+            background: transparent;
+            border: 1px solid var(--text-sub);
+            border-radius: 5px;
+            padding: 5px;
+            font-family: inherit;
+            color: var(--text-main);
+            max-width: 200px;
+        }
+
+        button.action-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 18px 50px;
+            border-radius: 100px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0, 0.1);
+        }
+
+        button.action-btn:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.1);
+            box-shadow: 0 15px 30px rgba(0,0,0, 0.2);
+        }
+
+        button.action-btn:disabled {
+            background: #dfe6e9;
+            color: #b2bec3;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        footer {
+            padding: 40px;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 600px) {
+            header h1 { font-size: 2.5rem; }
+            .demo-container { padding: 30px 20px; width: 85%; }
+            .theme-nav { top: 10px; padding: 10px; }
+            .visualizer-box { height: 100px; }
+            .status-blob { width: 80px; height: 80px; }
+            select { max-width: 150px; }
+        }
+    </style>
 </head>
-
 <body>
 
-<button class="theme-toggle"
-        id="themeToggle"
-        aria-label="Toggle dark mode">
-  <span></span>
-</button>
+    <div class="theme-nav" id="theme-container">
+        </div>
 
-<!-- -------------------------------------------------
-     Your page content goes here
-     ------------------------------------------------- -->
+    <div class="gradient-bg">
+        <svg xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="goo">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+                    <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+                    <feBlend in="SourceGraphic" in2="goo" />
+                </filter>
+            </defs>
+        </svg>
+        <div class="gradients-container">
+            <div class="g-blob"></div>
+            <div class="g-blob"></div>
+            <div class="interactive"></div>
+        </div>
+    </div>
 
-<div class="hero" style="padding: 4rem 1rem;">
-  <h1>Project Jerry Prototype</h1>
-  <p>This is a demo page with a rectangular dark‑mode toggle button.</p>
-  <button class="controls">Start</button>
-</div>
+    <header>
+        <h1>Jerry</h1>
+        <p>"Loneliness isn’t just an emotion... it’s a health risk."<br>An empathetic companion for the quiet moments.</p>
+    </header>
 
-<script>
-  const toggle = document.getElementById('themeToggle');
+    <div class="demo-container">
+        <div class="visualizer-box">
+            <div id="status-blob" class="status-blob"></div>
+        </div>
 
-  toggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark');
-  });
-</script>
+        <div class="transcript-area">
+            <div class="label">Step 1: Hearing You</div>
+            <div id="user-text" class="text-display">Tap the button to start...</div>
+        </div>
 
+        <div class="transcript-area">
+            <div class="label">Step 2: Jerry's Response</div>
+            <div id="jerry-response" class="text-display">...</div>
+        </div>
+
+        <div class="controls">
+            <div class="voice-settings">
+                <label for="voiceSelect">Voice:</label>
+                <select id="voiceSelect"></select>
+            </div>
+            <button id="start-btn" class="action-btn">Start Talking</button>
+        </div>
+    </div>
+
+    <footer>
+        Project Jerry Prototype | Built for ESP32-C6 Integration<br>
+        Using Groq Llama 3.1 & Web Speech API
+    </footer>
+
+    <script>
+        // --- CONFIG & SECRETS ---
+        const _k = "Z3NrX2VKdlBDaWRxOHhhcEVTZ2J4WVpUV0dkeWIzRlljR2RSdWR1a2dBRlRjZ2duWkp1NlNCb0s=";
+        const getK = () => atob(_k);
+        
+        const SYSTEM_PROMPT = "You are Jerry, a warm, supportive, and slightly storytelling AI companion. You are helpful, empathetic, and you keep your responses brief (under 2 sentences). Unless you decide to tell a story, then you can be more verbose.";
+
+
+        // --- THEME ENGINE ---
+        const themes = [
+            { name: "Classic", primary: "#2a5a8a", accent: "#f4a261", bg: "#f8f9fa", b1: "rgba(42, 90, 138, 0.8)", b2: "rgba(244, 162, 97, 0.8)" },
+            { name: "Forest", primary: "#2d6a4f", accent: "#d8f3dc", bg: "#f1faee", b1: "rgba(45, 106, 79, 0.8)", b2: "rgba(82, 183, 136, 0.8)" },
+            { name: "Sunset", primary: "#9d4edd", accent: "#ff9e00", bg: "#fae1dd", b1: "rgba(157, 78, 221, 0.8)", b2: "rgba(255, 158, 0, 0.8)" },
+            { name: "Ocean", primary: "#0077b6", accent: "#90e0ef", bg: "#caf0f8", b1: "rgba(0, 119, 182, 0.8)", b2: "rgba(0, 180, 216, 0.8)" },
+            { name: "Berry", primary: "#a4133c", accent: "#ff4d6d", bg: "#fff0f3", b1: "rgba(164, 19, 60, 0.8)", b2: "rgba(255, 77, 109, 0.8)" },
+            { name: "Dark Mode", primary: "#dfe6e9", accent: "#00cec9", bg: "#2d3436", b1: "rgba(99, 110, 114, 0.9)", b2: "rgba(178, 190, 195, 0.5)" }, // Text color adjust handled via primary
+            { name: "Royal", primary: "#3c096c", accent: "#ffd60a", bg: "#fcf6bd", b1: "rgba(60, 9, 108, 0.8)", b2: "rgba(255, 214, 10, 0.8)" },
+            { name: "Slate", primary: "#474787", accent: "#33d9b2", bg: "#f7f1e3", b1: "rgba(71, 71, 135, 0.8)", b2: "rgba(51, 217, 178, 0.8)" }
+        ];
+
+        const themeContainer = document.getElementById('theme-container');
+        const root = document.documentElement;
+
+        themes.forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'theme-btn';
+            btn.style.backgroundColor = t.primary;
+            btn.title = t.name;
+            btn.onclick = () => setTheme(t);
+            themeContainer.appendChild(btn);
+        });
+
+        function setTheme(t) {
+            root.style.setProperty('--primary', t.primary);
+            root.style.setProperty('--accent', t.accent);
+            root.style.setProperty('--bg-color', t.bg);
+            root.style.setProperty('--blob-1', t.b1);
+            root.style.setProperty('--blob-2', t.b2);
+            // Interactive blob gets a mix
+            root.style.setProperty('--blob-interactive', t.accent);
+            
+            // Adjust text color for Dark Mode
+            if(t.name === "Dark Mode") {
+                root.style.setProperty('--text-main', '#dfe6e9');
+                root.style.setProperty('--text-sub', '#b2bec3');
+                root.style.setProperty('--glass', 'rgba(0,0,0,0.4)');
+            } else {
+                root.style.setProperty('--text-main', '#2d3436');
+                root.style.setProperty('--text-sub', '#636e72');
+                root.style.setProperty('--glass', 'rgba(255, 255, 255, 0.65)');
+            }
+        }
+
+        // --- BACKGROUND FLUIDITY ---
+        const interBubble = document.querySelector('.interactive');
+        let curX = 0, curY = 0, tgX = 0, tgY = 0;
+
+        function move() {
+            curX += (tgX - curX) / 20;
+            curY += (tgY - curY) / 20;
+            interBubble.style.transform = `translate(${Math.round(curX)}px, ${Math.round(curY)}px)`;
+            requestAnimationFrame(move);
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            tgX = e.clientX;
+            tgY = e.clientY;
+        });
+        move();
+
+        // --- VOICE ENGINE & UI ---
+        const voiceSelect = document.getElementById('voiceSelect');
+        const startBtn = document.getElementById('start-btn');
+        const statusBlob = document.getElementById('status-blob');
+        const userDisplay = document.getElementById('user-text');
+        const jerryDisplay = document.getElementById('jerry-response');
+        let voices = [];
+
+        function populateVoices() {
+            voices = window.speechSynthesis.getVoices();
+            voiceSelect.innerHTML = '';
+
+            // Find default male voice index
+            let defaultIndex = 0;
+            
+            voices.forEach((voice, index) => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.value = index;
+                voiceSelect.appendChild(option);
+
+                // Check for requested "Male" defaults
+                if (voice.name.includes('David') || voice.name.includes('Google UK English Male') || voice.name.includes('Male')) {
+                    defaultIndex = index;
+                }
+            });
+
+            voiceSelect.selectedIndex = defaultIndex;
+        }
+
+        populateVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoices;
+        }
+
+        function speak(text) {
+            updateUI('speaking');
+            window.speechSynthesis.cancel();
+            
+            const utter = new SpeechSynthesisUtterance(text);
+            const selectedVoiceIndex = voiceSelect.value;
+            
+            if(voices[selectedVoiceIndex]) {
+                utter.voice = voices[selectedVoiceIndex];
+            }
+
+            // Heuristic: If it sounds like a male name or default male, lower pitch slightly
+            const vName = utter.voice ? utter.voice.name : "";
+            if(vName.includes("Male") || vName.includes("David")) {
+                utter.pitch = 0.9;
+            } else {
+                utter.pitch = 1.0;
+            }
+            
+            utter.rate = 0.9;
+            utter.onend = () => updateUI('idle');
+            window.speechSynthesis.speak(utter);
+        }
+
+        // --- SPEECH RECOGNITION (STT) ---
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userDisplay.innerText = `"${transcript}"`;
+                processWithAI(transcript);
+            };
+
+            recognition.onerror = (e) => {
+                console.error("Speech Error:", e.error);
+                updateUI('idle');
+                if(e.error === 'not-allowed') {
+                    userDisplay.innerText = "⚠️ Microphone access denied. Please check permissions.";
+                } else if (e.error === 'no-speech') {
+                    userDisplay.innerText = "⚠️ I didn't hear anything. Try again closer to the mic.";
+                } else {
+                    userDisplay.innerText = `⚠️ Error: ${e.error}`;
+                }
+            };
+
+            recognition.onend = () => {
+                // Determine if we should go back to idle (handled in logic)
+            };
+        } else {
+            userDisplay.innerText = "Browser not supported. Please use Chrome/Edge.";
+            startBtn.disabled = true;
+        }
+
+        startBtn.addEventListener('click', () => {
+            if (!recognition) return;
+            try {
+                recognition.start();
+                updateUI('listening');
+            } catch(e) { console.log("Restarting listener..."); }
+        });
+
+        // --- AI LOGIC ---
+        async function processWithAI(text) {
+            updateUI('thinking');
+            jerryDisplay.innerText = "Thinking...";
+
+            try {
+                const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${getK()}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: "llama-3.1-8b-instant",
+                        messages: [
+                            { role: "system", content: SYSTEM_PROMPT },
+                            { role: "user", content: text }
+                        ],
+                        temperature: 0.7
+                    })
+                });
+
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                jerryDisplay.innerText = reply;
+                speak(reply);
+
+            } catch (err) {
+                console.error(err);
+                jerryDisplay.innerText = "I'm having trouble connecting to the cloud.";
+                updateUI('idle');
+            }
+        }
+
+        // --- UI STATES ---
+        function updateUI(state) {
+            statusBlob.className = 'status-blob';
+            startBtn.disabled = (state !== 'idle');
+
+            if (state === 'listening') {
+                statusBlob.classList.add('listening');
+                userDisplay.innerText = "I'm listening...";
+                jerryDisplay.innerText = "...";
+            } else if (state === 'thinking') {
+                statusBlob.classList.add('thinking');
+            } else if (state === 'speaking') {
+                statusBlob.classList.add('speaking');
+            } else {
+                startBtn.innerText = "Talk to Jerry Again";
+                startBtn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
